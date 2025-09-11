@@ -10,9 +10,12 @@ USER_PROGS := \
 	ln\
 	ls\
 	mkdir\
+	helloworld\
+	callsyscall\
 	rm\
 	sh\
 	stressfs\
+	numtimestester\
 	tester\
 	usertests\
 	wc\
