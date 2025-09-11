@@ -27,6 +27,7 @@ int sleep(int);
 int uptime(void);
 int printpid(void);
 int numtimesgetpid(void);
+int PartB(void);
 
 // user library functions (ulib.c)
 int stat(char*, struct stat*);
