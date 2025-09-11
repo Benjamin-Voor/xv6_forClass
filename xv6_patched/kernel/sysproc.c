@@ -50,6 +50,12 @@ int sys_numtimesgetpid(void)
 }
 
 int
+sys_PartB(void)
+{
+  return counterB;
+}
+
+int
 sys_printpid(void)
 {
 	cprintf("My PID is: %d\n", proc->pid);

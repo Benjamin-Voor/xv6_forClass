@@ -138,6 +138,7 @@ int             argstr(int, char**);
 int             fetchint(struct proc*, uint, int*);
 int             fetchstr(struct proc*, uint, char**);
 void            syscall(void);
+extern int	counterB;
 
 // timer.c
 void            timerinit(void);
