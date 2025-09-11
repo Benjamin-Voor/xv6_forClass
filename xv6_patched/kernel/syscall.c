@@ -80,6 +80,9 @@ argstr(int n, char **pp)
 // syscall function declarations moved to sysfunc.h so compiler
 // can catch definitions that don't match
 
+extern int sys_thirdpart(void); //part c
+
+
 // array of function pointers to handlers for all the syscalls
 static int (*syscalls[])(void) = {
 [SYS_chdir]   sys_chdir,
@@ -103,8 +106,8 @@ static int (*syscalls[])(void) = {
 [SYS_wait]    sys_wait,
 [SYS_write]   sys_write,
 [SYS_uptime]  sys_uptime,
-[SYS_printpid] sys_uptime,
-[SYS_numtimesgetpid] sys_numtimesgetpid,
+[SYS_thirdpart] sys_thirdpart, //part c
+
 };
 
 // Called on a syscall trap. Checks that the syscall number (passed via eax)
@@ -113,13 +116,14 @@ void
 syscall(void)
 {
   int num;
-  
   num = proc->tf->eax;
-  if(num > 0 && num < NELEM(syscalls) && syscalls[num] != NULL) {
+  if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     proc->tf->eax = syscalls[num]();
+    proc->syscallCount++;   // Part c, increment counter
   } else {
     cprintf("%d %s: unknown sys call %d\n",
             proc->pid, proc->name, num);
     proc->tf->eax = -1;
   }
 }
+
