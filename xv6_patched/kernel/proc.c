@@ -45,16 +45,14 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->syscallCount = 0;   // Part c for initialize syscall counter
   release(&ptable.lock);
 
-  // allocate kernel stack if possible.
+  // Allocate kernel stack if possible.
   if((p->kstack = kalloc()) == 0){
     p->state = UNUSED;
     return 0;
   }
   sp = p->kstack + KSTACKSIZE;
-
   
   // Leave room for trap frame.
   sp -= sizeof *p->tf;

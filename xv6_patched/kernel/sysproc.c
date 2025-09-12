@@ -88,9 +88,3 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
-
-int
-sys_thirdpart(void)
-{
-  return proc->syscallCount; // part c
-}

@@ -23,6 +23,5 @@
 #define SYS_sbrk   19
 #define SYS_sleep  20
 #define SYS_uptime 21
-#define SYS_thirdpart  22
 
 #endif // _SYSCALL_H_
