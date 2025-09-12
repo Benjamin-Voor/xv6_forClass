@@ -16,6 +16,7 @@ USER_PROGS := \
 	tester\
 	usertests\
 	wc\
+	tester3\
 	zombie
 	_thirdpart_test
 

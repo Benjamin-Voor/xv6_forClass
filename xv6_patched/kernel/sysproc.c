@@ -41,6 +41,24 @@ sys_getpid(void)
   return proc->pid;
 }
 
+int sys_numtimesgetpid(void)
+{	
+	return counter;
+}
+
+int
+sys_PartB(void)
+{
+  return counterB;
+}
+
+int
+sys_printpid(void)
+{
+	cprintf("My PID is: %d\n", proc->pid);
+	return 0;
+}
+
 int
 sys_sbrk(void)
 {
