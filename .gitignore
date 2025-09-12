@@ -64,8 +64,8 @@ xv6_patched/fs/
 xv6_patched/kernel/bootblock
 xv6_patched/kernel/kernel
 xv6_patched/user/bin/
-xv6_patched/xv6.img
-xv6_patched/fs.img
+*.img
+# This should cover both `xv6_patched/xv6.img` and `xv6_patched/fs.img`
 
 !xv6_patched/tools/mkfs.c
 xv6_patched/tools/mkfs
