@@ -10,6 +10,10 @@
 extern int sys_PartB(void);
 
 int counterB = 0;
+extern int syscall_counter;
+
+
+extern int sys_thirdpart(void);
 
 // User code makes a system call with INT T_SYSCALL.
 // System call number in %eax.
@@ -119,13 +123,17 @@ void
 syscall(void)
 {
   int num;
-  counterB++;
-  num = proc->tf->eax;
-  if(num > 0 && num < NELEM(syscalls) && syscalls[num] != NULL) {
-    proc->tf->eax = syscalls[num]();
-  } else {
+  struct proc *p = myproc();
+
+  num = p->tf->eax;
+  if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+    syscall_counter++;       // global counter
+    p->syscallCount++;       // per-process counter (Part C)
+    p->tf->eax = syscalls[num]();
+  }
+  else {
     cprintf("%d %s: unknown sys call %d\n",
-            proc->pid, proc->name, num);
-    proc->tf->eax = -1;
+            p->pid, p->name, num);
+    p->tf->eax = -1;
   }
 }

@@ -43,5 +43,7 @@ void* malloc(uint);
 void free(void*);
 int atoi(const char*);
 
+int thirdpart(void);
+
 #endif // _USER_H_
 

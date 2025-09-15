@@ -6,12 +6,17 @@
 #include "proc.h"
 #include "spinlock.h"
 
+int syscall_counter = 0;
+
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
 } ptable;
 
 static struct proc *initproc;
+
+
 
 int nextpid = 1;
 extern void forkret(void);
@@ -425,6 +430,8 @@ procdump(void)
   struct proc *p;
   char *state;
   uint pc[10];
+
+  
   
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->state == UNUSED)
@@ -442,5 +449,13 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+struct proc*
+myproc(void)
+{
+  return proc;   // use the global directly
+}
+
+
 
 

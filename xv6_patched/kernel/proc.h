@@ -39,6 +39,11 @@ extern int ncpu;
 extern struct cpu *cpu asm("%gs:0");       // &cpus[cpunum()]
 extern struct proc *proc asm("%gs:4");     // cpus[cpunum()].proc
 
+
+
+
+
+
 // Saved registers for kernel context switches.
 // Don't need to save all the segment registers (%cs, etc),
 // because they are constant across kernel contexts.
@@ -81,5 +86,7 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+struct proc* myproc(void);  
 
 #endif // _PROC_H_

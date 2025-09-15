@@ -110,3 +110,11 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+
+
+extern int syscall_counter; //part c
+
+int sys_thirdpart(void){
+  return syscall_counter;
+}
