@@ -89,8 +89,10 @@ sys_uptime(void)
   return xticks;
 }
 
-int
-sys_thirdpart(void)
-{
-  return proc->syscallCount; // part c
+
+
+extern int syscall_counter; //part c
+
+int sys_thirdpart(void){
+  return syscall_counter;
 }

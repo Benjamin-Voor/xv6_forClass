@@ -40,7 +40,7 @@ void* malloc(uint);
 void free(void*);
 int atoi(const char*);
 
-int ThirdPart(void);
+int thirdpart(void);
 
 
 #endif // _USER_H_
