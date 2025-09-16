@@ -10,8 +10,8 @@ USER_PROGS := \
 	ln\
 	ls\
 	mkdir\
+	first\
 	helloworld\
-	callsyscall\
 	rm\
 	sh\
 	stressfs\
@@ -19,8 +19,11 @@ USER_PROGS := \
 	tester\
 	usertests\
 	wc\
-	zombie\
-	thirdpart_test \
+	getpid\
+	part_a_test\
+	part_b_test\
+	part_c_test\
+	zombie
 
 USER_PROGS := $(addprefix user/, $(USER_PROGS))
 

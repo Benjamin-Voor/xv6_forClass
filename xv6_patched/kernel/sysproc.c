@@ -6,7 +6,7 @@
 #include "proc.h"
 #include "sysfunc.h"
 
-int counter =0;
+int counterA = 0;
 
 int
 sys_fork(void)
@@ -40,13 +40,14 @@ sys_kill(void)
 int
 sys_getpid(void)
 {
-  counter++;	
+  counterA++;
   return proc->pid;
 }
 
-int sys_numtimesgetpid(void)
-{	
-	return counter;
+int
+sys_PartA(void)
+{
+  return counterA;
 }
 
 int
@@ -56,12 +57,10 @@ sys_PartB(void)
 }
 
 int
-sys_printpid(void)
+sys_PartC(void)
 {
-	cprintf("My PID is: %d\n", proc->pid);
-	return 0;
+  return counterC;
 }
-  
 
 int
 sys_sbrk(void)
