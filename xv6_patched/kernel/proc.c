@@ -50,6 +50,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->syscallCount = 0;   // Part c for initialize syscall counter
   release(&ptable.lock);
 
   // Allocate kernel stack if possible.
