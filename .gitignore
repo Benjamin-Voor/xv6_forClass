@@ -71,3 +71,6 @@ xv6_patched/user/bin/
 xv6_patched/tools/mkfs
 xv6_patched/tools/mkfs.d
 xv6_patched/tools/mkfs.o
+
+**/.vscode
+!**/README.**
