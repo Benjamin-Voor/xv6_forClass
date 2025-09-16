@@ -11,16 +11,17 @@ USER_PROGS := \
 	ls\
 	mkdir\
 	first\
-	mytester\
 	helloworld\
-	thisismypid\
 	rm\
 	sh\
 	stressfs\
 	tester\
 	usertests\
 	wc\
-	tester3\
+	getpid\
+	part_a_test\
+	part_b_test\
+	part_c_test\
 	zombie
 
 USER_PROGS := $(addprefix user/, $(USER_PROGS))

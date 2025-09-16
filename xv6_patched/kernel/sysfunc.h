@@ -9,7 +9,6 @@ int sys_exec(void);
 int sys_exit(void);
 int sys_fork(void);
 int sys_fstat(void);
-int sys_getpid(void);
 int sys_kill(void);
 int sys_link(void);
 int sys_mkdir(void);
@@ -23,6 +22,9 @@ int sys_unlink(void);
 int sys_wait(void);
 int sys_write(void);
 int sys_uptime(void);
+int sys_getpid(void);
+int sys_PartA(void);
 int sys_PartB(void);
+int sys_PartC(void);
 
 #endif // _SYSFUNC_H_
