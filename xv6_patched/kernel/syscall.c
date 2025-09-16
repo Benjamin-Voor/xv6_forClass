@@ -130,7 +130,7 @@ syscall(void)
     }
   } else {
     cprintf("%d %s: unknown sys call %d\n",
-            p->pid, p->name, num);
-    p->tf->eax = -1;
+            proc->pid, proc->name, num);
+    proc->tf->eax = -1;
   }
 }
