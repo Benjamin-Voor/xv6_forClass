@@ -10,6 +10,10 @@ USER_PROGS := \
 	ln\
 	ls\
 	mkdir\
+	first\
+	mytester\
+	helloworld\
+	thisismypid\
 	rm\
 	sh\
 	stressfs\

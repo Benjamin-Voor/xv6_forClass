@@ -107,8 +107,6 @@ static int (*syscalls[])(void) = {
 [SYS_wait]    sys_wait,
 [SYS_write]   sys_write,
 [SYS_uptime]  sys_uptime,
-[SYS_printpid] sys_uptime,
-[SYS_numtimesgetpid] sys_numtimesgetpid,
 [SYS_PartB]   sys_PartB,
 };
 
@@ -119,7 +117,7 @@ syscall(void)
 {
   int num;
   counterB++;
-  
+
   num = proc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num] != NULL) {
     proc->tf->eax = syscalls[num]();

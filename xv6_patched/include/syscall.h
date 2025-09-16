@@ -23,8 +23,7 @@
 #define SYS_sbrk   19
 #define SYS_sleep  20
 #define SYS_uptime 21
-#define SYS_printpid 22
-#define SYS_numtimesgetpid 23
-#define SYS_PartB  24
+
+#define SYS_PartB  23
 
 #endif // _SYSCALL_H_
