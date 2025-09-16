@@ -6,6 +6,8 @@
 #include "proc.h"
 #include "sysfunc.h"
 
+int counterA = 0;
+
 int
 sys_fork(void)
 {
@@ -38,7 +40,26 @@ sys_kill(void)
 int
 sys_getpid(void)
 {
+  counterA++;
   return proc->pid;
+}
+
+int
+sys_PartA(void)
+{
+  return counterA;
+}
+
+int
+sys_PartB(void)
+{
+  return counterB;
+}
+
+int
+sys_PartC(void)
+{
+  return counterC;
 }
 
 int
@@ -87,4 +108,12 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+
+
+extern int syscall_counter; //part c
+
+int sys_thirdpart(void){
+  return syscall_counter;
 }
