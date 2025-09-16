@@ -6,6 +6,6 @@
 int
 main(int argc, char *argv[])
 {
-  printf(1, "This is my PID: %d\n", PartA());
+  printf(1, "Number of times getpid has been called: %d\n", PartA());
   exit();
 }
