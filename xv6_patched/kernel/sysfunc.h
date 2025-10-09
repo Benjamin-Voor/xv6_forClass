@@ -26,5 +26,6 @@ int sys_getpid(void);
 int sys_PartA(void);
 int sys_PartB(void);
 int sys_PartC(void);
+int ps(void);
 
 #endif // _SYSFUNC_H_

@@ -28,6 +28,7 @@ int getpid(void);
 int PartA(void);
 int PartB(void);
 int PartC(void);
+int ps(void);
 
 // user library functions (ulib.c)
 int stat(char*, struct stat*);

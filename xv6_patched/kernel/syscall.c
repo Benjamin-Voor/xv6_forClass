@@ -9,6 +9,7 @@
 
 extern int sys_PartB(void);
 extern int sys_PartC(void);
+extern int sys_ps(void);
 
 int counterB = 0;
 int counterC = 0;
@@ -112,6 +113,7 @@ static int (*syscalls[])(void) = {
 [SYS_PartA]   sys_PartA,
 [SYS_PartB]   sys_PartB,
 [SYS_PartC]   sys_PartC,
+[SYS_ps]      sys_ps,
 };
 
 // Called on a syscall trap. Checks that the syscall number (passed via eax)

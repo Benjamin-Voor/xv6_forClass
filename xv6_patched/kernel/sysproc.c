@@ -114,6 +114,12 @@ sys_uptime(void)
 
 extern int syscall_counter; //part c
 
-int sys_thirdpart(void){
+int 
+sys_thirdpart(void){
   return syscall_counter;
+}
+int
+sys_ps(void)
+{
+  return ps(); // implemented in kernel/proc.c
 }
