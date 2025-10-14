@@ -50,7 +50,8 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->syscallCount = 0;   // Part c for initialize syscall counter
+  p->tickets = 1;   // Mini-Project 2:
+  p->ticks = 0;     // Part A
   release(&ptable.lock);
 
   // Allocate kernel stack if possible.
@@ -139,6 +140,9 @@ fork(void)
   // Allocate process.
   if((np = allocproc()) == 0)
     return -1;
+
+  // // In fork(), after acquiring lock and before copying state
+  // np->tickets = curproc->tickets;
 
   // Copy process state from p.
   if((np->pgdir = copyuvm(proc->pgdir, proc->sz)) == 0){
@@ -262,32 +266,49 @@ void
 scheduler(void)
 {
   struct proc *p;
+  struct cpu *c = mycpu(); // -Wimplicit-function-declaration
+  c->proc = 0;
 
   for(;;){
     // Enable interrupts on this processor.
     sti();
-
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
+
+    // Calculate total tickets from RUNNABLE processes
+    int total_tickets = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
-
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-      swtch(&cpu->scheduler, proc->context);
-      switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      proc = 0;
+      if(p->state == RUNNABLE)
+        total_tickets += p->tickets;
     }
-    release(&ptable.lock);
 
+    if(total_tickets > 0){ // Mini-Project 2, Part A, Step 3:
+      // Hold lottery
+      int winner = random() % total_tickets;
+
+      // Find winning process
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state == RUNNABLE){
+          winner -= p->tickets;
+          if(winner < 0){
+            // This process wins!
+            c->proc = p;
+            switchuvm(p);
+            p->state = RUNNING;
+            p->ticks++;   // Increment schedule count
+            
+            swtch(&(c->scheduler), p->context);
+            switchkvm();
+
+            c->proc = 0;
+            break;
+          }
+        }
+      }
+    }
+
+    release(&ptable.lock);
   }
 }
 
