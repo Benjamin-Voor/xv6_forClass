@@ -128,7 +128,7 @@ static int (*syscalls[])(void) = {
 // Mini-Project 2, Option 2
 [SYS_settickets]  sys_settickets,
 [SYS_getpinfo] sys_getpinfo,
-[SYS_setpriority] sys_setpriority,
+// [SYS_setpriority] sys_setpriority, // Part B
 };
 
 // Called on a syscall trap. Checks that the syscall number (passed via eax)

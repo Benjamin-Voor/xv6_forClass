@@ -6,7 +6,18 @@
 #include "proc.h"
 #include "spinlock.h"
 
-int syscall_counter = 0;
+/* Mini-project 2 */
+// #include <stdlib.h> // "rand()" for lottery scheduler // failing because of kernel/makefile.mk:68
+static unsigned long rand_next = 1;
+int
+random(void)
+{
+  rand_next *= 1103515245 + 12345;
+  return (unsigned int)(rand_next / 65536) % 32768;
+}
+
+
+int syscall_counter = 0; // Mini-project 1
 
 
 struct {
@@ -266,7 +277,8 @@ void
 scheduler(void)
 {
   struct proc *p;
-  struct cpu *c = mycpu(); // -Wimplicit-function-declaration
+  struct cpu *c; 
+  *c = mycpu(); // -Wimplicit-function-declaration
   c->proc = 0;
 
   for(;;){
@@ -285,7 +297,7 @@ scheduler(void)
 
     if(total_tickets > 0){ // Mini-Project 2, Part A, Step 3:
       // Hold lottery
-      int winner = random() % total_tickets;
+      int winner = random() % total_tickets; // "random()" implemented in proc.c
 
       // Find winning process
       for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -480,7 +492,7 @@ myproc(void)
 
 
 int 
-ps(void)
+ps(void) // Abandoned! Mini-project 2, Option 1, Part A
 {
   struct proc *p; 
   char *state;
@@ -510,4 +522,3 @@ ps(void)
 
   return 0;
 }
-

@@ -65,7 +65,7 @@ KERNEL_CLEAN := \
 # add include dir to search path for headers
 KERNEL_CPPFLAGS += -I include
 # do not search standard system paths for headers
-KERNEL_CPPFLAGS += -nostdinc
+KERNEL_CPPFLAGS += -nostdinc # This is why I can't use "rand()"
 # disable PIC (position independent code)
 KERNEL_CFLAGS += -fno-pic
 # do not use GCC builtin funtions (used to optimize common functions)
