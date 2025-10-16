@@ -29,6 +29,7 @@ int PartA(void);
 int PartB(void);
 int PartC(void);
 int ps(void);
+int setpriority(int);
 
 // user library functions (ulib.c)
 int stat(char*, struct stat*);

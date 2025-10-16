@@ -10,6 +10,7 @@
 extern int sys_PartB(void);
 extern int sys_PartC(void);
 extern int sys_ps(void);
+extern int sys_setpriority(void);
 
 int counterB = 0;
 int counterC = 0;
@@ -114,6 +115,7 @@ static int (*syscalls[])(void) = {
 [SYS_PartB]   sys_PartB,
 [SYS_PartC]   sys_PartC,
 [SYS_ps]      sys_ps,
+[SYS_setpriority] sys_setpriority
 };
 
 // Called on a syscall trap. Checks that the syscall number (passed via eax)

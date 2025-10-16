@@ -51,6 +51,8 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   p->syscallCount = 0;   // Part c for initialize syscall counter
+  p->priority = 50; // Default priority
+  p->ticks = 0; // Default scheduled 0 times
   release(&ptable.lock);
 
   // Allocate kernel stack if possible.
@@ -150,6 +152,10 @@ fork(void)
   np->sz = proc->sz;
   np->parent = proc;
   *np->tf = *proc->tf;
+
+  // Inherit priority from parent
+  np->priority = proc->priority;
+  np->ticks = 0; // Reset counter for new process
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -262,32 +268,59 @@ void
 scheduler(void)
 {
   struct proc *p;
+  struct cpu *c = mycpu();
+  c->proc = 0;
 
-  for(;;){
-    // Enable interrupts on this processor.
-    sti();
+  static struct proc *last_sched = 0; // For RR in priority
 
-    // Loop over process table looking for process to run.
+  for(;;) {
+    sti(); // Interrupts enable
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
+    int highest_priority = 201; // Above max value
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      proc = p;
+    // Find highest priority among RUNNABLE processes
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if(p->state == RUNNABLE && p->priority < highest_priority) {
+        highest_priority = p->priority;
+      }
+    }
+
+    // RR processes within priority level
+    struct proc *selected = 0;
+    struct proc *start = last_sched ? last_sched + 1 : ptable.proc;
+
+    // Search from last_sched to end
+    for(p = start; p < &ptable.proc[NPROC]; p++) {
+      if(p->state == RUNNABLE && p->priority == highest_priority) {
+        selected = p;
+        break;
+      }
+    }
+
+    // If not found, search from beginning
+    if(selected == 0) {
+      for(p = ptable.proc; p < start; p++) {
+        if(p->state == RUNNABLE && p->priority == highest_priority) {
+          selected = p;
+          break;
+        }
+      }
+    }
+
+    if(selected != 0) {
+      p = selected;
+      last_sched = p;
+
+      c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
-      swtch(&cpu->scheduler, proc->context);
+      p->ticks++;
+      swtch(&c->scheduler, p->context);
       switchkvm();
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      proc = 0;
+      c->proc = 0;
     }
     release(&ptable.lock);
-
   }
 }
 
@@ -311,7 +344,7 @@ sched(void)
   cpu->intena = intena;
 }
 
-// Give up the CPU for one scheduling round.
+// Give up the CPU for one scheduling round. 
 void
 yield(void)
 {

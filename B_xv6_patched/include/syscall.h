@@ -27,5 +27,6 @@
 #define SYS_PartB  23
 #define SYS_PartC  24
 #define SYS_ps     25
+#define SYS_setpriority 27
 
 #endif // _SYSCALL_H_
