@@ -29,7 +29,7 @@ int PartA(void);
 int PartB(void);
 int PartC(void);
 int ps(void);
-int setpriority(int);
+int setpriority(int); // Part B (Priority scheduler)
 
 // user library functions (ulib.c)
 int stat(char*, struct stat*);

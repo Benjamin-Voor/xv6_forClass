@@ -1,48 +1,38 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#include "pstat.h"
-
-#define NUM_PROCS 5
 
 int
-main(void)
-{
-    int pids[NUMS_PROCS];
-    int priorities[NUM_PROCS] = {10, 30, 50, 100, 200}
+main(void) {
+    int pid;
 
-    for(int i = 0; i < NUM_PROCS; i++) {
-        int pid = fork();
+    // Create multiple processes with different priorities
+    for(int i = 0; i < 5; i++) {
+        pid = fork();
+
+        if(pid < 0){
+            printf("Fork failed\n");
+            exit();
+        }
+
         if(pid == 0) {
-            setpriority(priorities[i]);
+            int prio = (i+1) * 20;  // priorities: 20, 40, 60, 80, 100
+            int old = setpriority(prio);
+            printf("Child %d: old priority = %d, new priority = %d\n", getpid(), old, prio);
+
+            // Consume CPU time
             volatile int j;
-            for(;;) for(j = 0; j < 1000000; j++); // Burn CPU
+            for(j = 0; j < 100000000; j++);
+                
+            printf("Child %d finished\n", getpid());
+            exit();
         }
-        else {
-            pids[i] = pid;
-        }
-    }
-    sleep(2000);
+    } 
 
-    struct pstat ps;
-    if(getinfo(&ps) < 0) {
-        printf(1, "getpinfo failed\n");
-        exit();
-    }
+    // Parent waits for all children
+    for(int i = 0; i < 5; i++)
+        wait();
 
-    printf(1, "PID\tPriority\tTicks\n");
-    for(int i = 0; i < NPROC; i++) {
-        if(ps.inuse[i]) {
-            for(int j = 0; j < NUM_PROCS; j++) {
-                if(ps.pid[i] == pids[j]) {
-                    printf(1, "%d\t%d\t\t%d\n", ps.pid[i], priorities[j], ps.ticks[i]);
-                }
-            }
-        }
-    }
-
-    for(int i = 0; i < NUM_PROCS; i++)
-        kill(pids[i]);
-
+    printf("Priority test completed.\n");
     exit();
 }

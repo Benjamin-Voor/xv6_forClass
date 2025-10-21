@@ -84,6 +84,9 @@ int             mpbcpu(void);
 void            mpinit(void);
 void            mpstartthem(void);
 
+// Part B (Priority scheduler)
+int setpriority(int);
+
 // picirq.c
 void            picenable(int);
 void            picinit(void);
