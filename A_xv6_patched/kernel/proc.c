@@ -4,21 +4,10 @@
 #include "mmu.h"
 #include "x86.h"
 #include "proc.h"
+#include "pstat.h" // baseline-1.pdf // I assume
 #include "spinlock.h"
 
-/* Mini-project 2 */
-// #include <stdlib.h> // "rand()" for lottery scheduler // failing because of kernel/makefile.mk:68
-static unsigned long rand_next = 1;
-int
-random(void)
-{
-  rand_next *= 1103515245 + 12345;
-  return (unsigned int)(rand_next / 65536) % 32768;
-}
-
-
 int syscall_counter = 0; // Mini-project 1
-
 
 struct {
   struct spinlock lock;
@@ -61,6 +50,8 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->numTicks = 0; // baseline-1.pdf
+  p->syscallCount = 0;   // Mini-Project 1, Part c for initialize syscall counter
   p->tickets = 1;   // Mini-Project 2:
   p->ticks = 0;     // Part A
   release(&ptable.lock);
@@ -277,27 +268,28 @@ void
 scheduler(void)
 {
   struct proc *p;
-  struct cpu *c; 
-  *c = mycpu(); // -Wimplicit-function-declaration
-  c->proc = 0;
+  // struct cpu *c; // Don't need it. Usages must be commented out or removed.
+  // *c = mycpu(); 
+  proc = 0; // ¿Maybe cpu->proc = 0?
 
   for(;;){
     // Enable interrupts on this processor.
     sti();
+
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
 
 
     // Calculate total tickets from RUNNABLE processes
-    int total_tickets = 0;
+    int total_tickets = 0; // part A only // Mini-project 2
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state == RUNNABLE)
-        total_tickets += p->tickets;
+        total_tickets += p->tickets; // part A only // Mini-project 2
     }
 
-    if(total_tickets > 0){ // Mini-Project 2, Part A, Step 3:
+    if(total_tickets > 0){ // Mini-Project 2, Part A, Step 3. This whole if-statement could have been inverted!
       // Hold lottery
-      int winner = random() % total_tickets; // "random()" implemented in proc.c
+      int winner = random() % total_tickets; // "random()" implemented in kernproc.c
 
       // Find winning process
       for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -305,15 +297,17 @@ scheduler(void)
           winner -= p->tickets;
           if(winner < 0){
             // This process wins!
-            c->proc = p;
+            proc = p; // ¿Maybe cpu->proc = p;
             switchuvm(p);
             p->state = RUNNING;
-            p->ticks++;   // Increment schedule count
+
+            p->ticks++;   // Increment schedule count // part A only
+            p->numTicks += 1; // baseline-1.pdf
             
-            swtch(&(c->scheduler), p->context);
+            swtch(&cpu->scheduler, p->context); // "&(scheduler)" error: passing argument 1 of ‘swtch’ from incompatible pointer type
             switchkvm();
 
-            c->proc = 0;
+            proc = 0;
             break;
           }
         }
@@ -492,7 +486,7 @@ myproc(void)
 
 
 int 
-ps(void) // Abandoned! Mini-project 2, Option 1, Part A
+ps(void) // baseline-1.pdf
 {
   struct proc *p; 
   char *state;
@@ -513,6 +507,10 @@ ps(void) // Abandoned! Mini-project 2, Option 1, Part A
     else if (p->state==ZOMBIE) {
       state="ZOMBIE";
     }
+    else if (p->state==EMBRYO)
+    {
+      state="EMBRYO";
+    }
     else {
       state="OTHER";
     }
@@ -520,5 +518,85 @@ ps(void) // Abandoned! Mini-project 2, Option 1, Part A
   }
   release(&ptable.lock);
 
+  return 0;
+}
+
+int
+getpinfo(struct pstat* pInfo) // baseline-1.pdf
+{
+  struct proc *p; 
+  int i=0;
+  acquire(&ptable.lock);
+  for(p=ptable.proc; p < &ptable.proc[NPROC]; ++p) {
+    if (p->state==ZOMBIE || p->state == EMBRYO) {
+      continue;
+    }
+    else if(p->state == UNUSED) {
+      pInfo->inuse[i] = 0; // #include "pstat.h"
+    } // PROCESS VARIABLES
+    else {
+      pInfo->inuse[i] = 1;
+    }
+    pInfo->pid[i] = p->pid;
+    pInfo->ticks[i] = p->ticks;
+    pInfo->size[i] = p->sz; // error: 'struct proc' has no member named 'size'; did you mean 'sz'?
+    i++;
+  }
+  release(&ptable.lock);
+  return 0;
+}
+
+// Prototype is in sysproc.c
+int sys_settickets(void) // Mini-Project 2, Part A
+{
+  int n;
+
+  if (argint(0, &n) < 0)
+  {
+    return -1;
+  }
+
+  if (n < 1)
+  {
+    return -1;
+  }
+
+  acquire(&ptable.lock); // This line gives me the error that identifier "ptable" is undefined. It's defined in proc.c, not in sysproc.c
+  myproc()->tickets = n;
+  release(&ptable.lock);
+
+  return 0;
+}
+
+// Prototype is in sysproc.c
+int
+sys_getpinfo(void) // Mini-Project 2 // part A only, Lottery Scheduler
+{
+  struct pstat *ps;
+  if (argptr(0, (void *)&ps, sizeof(*ps)) < 0)
+    return -1;
+
+
+  struct proc *p;
+  int i = 0; 
+  acquire(&ptable.lock);
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++, i++)
+  {
+    if (p->state == UNUSED)
+    {
+      ps->inuse[i] = 0;
+    }
+    else
+    {
+      ps->inuse[i] = 1;
+      // ps->tickets[i] = p->tickets;
+      // error: ‘struct pstat’ has no member named ‘tickets’; did you mean ‘ticks’?
+      ps->ticks[i] = p->ticks;
+      ps->pid[i] = p->pid;
+      ps->ticks[i] = p->ticks;
+    }
+  }
+
+  release(&ptable.lock);
   return 0;
 }

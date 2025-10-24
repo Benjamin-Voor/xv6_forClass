@@ -1,0 +1,11 @@
+Unofficial style guide, but judging by the original xv6_patched zip file sent from the teacher, the return type must be declared on the line before the function name, and there is no space between the "if" keyword and its parantheses. Here's an example from the original kernel/sysproc.c file:
+
+int
+sys_kill(void)
+{
+  int pid;
+
+  if(argint(0, &pid) < 0)
+    return -1;
+  return kill(pid);
+}
