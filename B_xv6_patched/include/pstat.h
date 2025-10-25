@@ -4,9 +4,10 @@
 
 struct pstat {
     int inuse[NPROC]; // whether this slot is in use (1 or 0)
-    int tickets[NPROC]; // number of tickets this process has
     int pid[NPROC]; // PID of each process
-    int ticks[NPROC]; // number of times process was scheduled
+    int ticks[NPROC]; // number of ticks process was scheduled
+    int size[NPROC]; // number of bytes of the process
+    int priority[NPROC]; // priority of the process
 };
 
 # endif // _PSTAT_H_

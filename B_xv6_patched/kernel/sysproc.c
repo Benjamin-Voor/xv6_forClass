@@ -5,6 +5,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "sysfunc.h"
+#include "ptable.h"
 
 int counterA = 0;
 
@@ -79,25 +80,30 @@ sys_sbrk(void)
 int
 sys_setpriority(void)
 {
-  int pid, priority;
+    int pid, priority;
 
-  if(argint(0, &pid) < 0)
-    return -1;
-  if(argint(1, &priority) < 0)
-    return -1;
+    if(argint(0, &pid) < 0)
+        return -1;
+    if(argint(1, &priority) < 0)
+        return -1;
 
-  struct proc *p;
-  acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-    if(p->pid == pid) {
-      p->priority = priority;
-      release(&ptable.lock);
-      return 0;
+    // Validate priority first
+    if(priority < 0 || priority > 200)
+        return -1;
+
+    struct proc *p;
+    acquire(&ptable.lock);
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if(p->pid == pid) {
+            p->priority = priority;
+            release(&ptable.lock);
+            return 0;
+        }
     }
-  }
-  release(&ptable.lock);
-  return -1;
+    release(&ptable.lock);
+    return -1; // PID not found
 }
+
 
 int
 sys_sleep(void)
@@ -133,14 +139,6 @@ sys_uptime(void)
   return xticks;
 }
 
-
-
-extern int syscall_counter; //part c
-
-int 
-sys_thirdpart(void){
-  return syscall_counter;
-}
 int
 sys_ps(void)
 {

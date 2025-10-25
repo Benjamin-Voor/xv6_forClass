@@ -4,19 +4,10 @@
 #include "mmu.h"
 #include "x86.h"
 #include "proc.h"
+#include "pstat.h" // baseline-1.pdf
 #include "spinlock.h"
 
-int syscall_counter = 0;
-
-
-struct {
-  struct spinlock lock;
-  struct proc proc[NPROC];
-} ptable;
-
 static struct proc *initproc;
-
-
 
 int nextpid = 1;
 extern void forkret(void);
@@ -50,7 +41,8 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->syscallCount = 0;   // Part c for initialize syscall counter
+  p->numTicks = 0;
+  p->syscallCount = 0;
   p->priority = 50; // Default priority
   p->ticks = 0; // Default scheduled 0 times
   release(&ptable.lock);
@@ -268,8 +260,7 @@ void
 scheduler(void)
 {
   struct proc *p;
-  cpu->proc = 0;  // use global cpu directly
-
+  proc = 0;
   static struct proc *last_sched = 0; // For RR in priority
 
   for(;;) {
@@ -512,6 +503,9 @@ ps(void)
     else if (p->state==ZOMBIE) {
       state="ZOMBIE";
     }
+    else if (p->state==EMBRYO) {
+      state="EMBRYO";
+    }
     else {
       state="OTHER";
     }
@@ -522,3 +516,24 @@ ps(void)
   return 0;
 }
 
+int
+getpinfo(struct pstat *pInfo)
+{
+    struct proc *p; 
+    int i = 0;
+
+    acquire(&ptable.lock);
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; ++p, ++i) {
+        if (p->state == UNUSED)
+            pInfo->inuse[i] = 0;
+        else {
+            pInfo->inuse[i] = 1;
+            pInfo->pid[i] = p->pid;
+            pInfo->ticks[i] = p->ticks;
+            pInfo->priority[i] = p->priority;
+            pInfo->size[i] = p->sz;
+        }
+    }
+    release(&ptable.lock);
+    return 0;
+}
