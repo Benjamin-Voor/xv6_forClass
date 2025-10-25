@@ -268,15 +268,14 @@ void
 scheduler(void)
 {
   struct proc *p;
-  struct cpu *c = mycpu();
-  c->proc = 0;
+  cpu->proc = 0;  // use global cpu directly
 
   static struct proc *last_sched = 0; // For RR in priority
 
   for(;;) {
-    sti(); // Interrupts enable
+    sti(); // enable interrupts
     acquire(&ptable.lock);
-    int highest_priority = 201; // Above max value
+    int highest_priority = 201; // above max possible priority
 
     // Find highest priority among RUNNABLE processes
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
@@ -285,7 +284,7 @@ scheduler(void)
       }
     }
 
-    // RR processes within priority level
+    // Round-robin among processes with that priority
     struct proc *selected = 0;
     struct proc *start = last_sched ? last_sched + 1 : ptable.proc;
 
@@ -297,7 +296,7 @@ scheduler(void)
       }
     }
 
-    // If not found, search from beginning
+    // If not found, wrap around
     if(selected == 0) {
       for(p = ptable.proc; p < start; p++) {
         if(p->state == RUNNABLE && p->priority == highest_priority) {
@@ -311,14 +310,14 @@ scheduler(void)
       p = selected;
       last_sched = p;
 
-      c->proc = p;
+      cpu->proc = p;
       switchuvm(p);
       p->state = RUNNING;
       p->ticks++;
-      swtch(&c->scheduler, p->context);
+      swtch(&cpu->scheduler, p->context);  // use global cpu here
       switchkvm();
 
-      c->proc = 0;
+      cpu->proc = 0;
     }
     release(&ptable.lock);
   }
