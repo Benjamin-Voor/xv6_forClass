@@ -16,6 +16,7 @@ KERNEL_OBJECTS := \
 	picirq.o\
 	pipe.o\
 	proc.o\
+	ptable.o\
 	spinlock.o\
 	string.o\
 	swtch.o\
@@ -63,7 +64,7 @@ KERNEL_CLEAN := \
 	xv6.img
 
 # add include dir to search path for headers
-KERNEL_CPPFLAGS += -I include
+KERNEL_CPPFLAGS += -I include -I kernel
 # do not search standard system paths for headers
 KERNEL_CPPFLAGS += -nostdinc
 # disable PIC (position independent code)
@@ -143,4 +144,3 @@ kernel/%.d: kernel/%.c
 kernel/%.d: kernel/%.S
 	$(AS) $(CPPFLAGS) $(KERNEL_CPPFLAGS) $(CFLAGS) $(KERNEL_CFLAGS) \
 		-M -MG $< -MF $@ -MT $@ -MT $(<:.S=.o)
-

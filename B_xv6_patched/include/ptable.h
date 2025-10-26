@@ -3,11 +3,13 @@
 
 #include "spinlock.h"
 #include "param.h" // for NPROC
-#include "proc.h" // struct proc
+#include "proc.h"  // struct proc
 
-extern struct {
-  struct spinlock lock;
-  struct proc proc[NPROC];
-} ptable;
+struct ptable_struct {
+    struct spinlock lock;
+    struct proc proc[NPROC];
+};
+
+extern struct ptable_struct ptable;
 
 #endif

@@ -6,6 +6,7 @@
 #include "proc.h"
 #include "pstat.h" // baseline-1.pdf
 #include "spinlock.h"
+#include "ptable.h"
 
 static struct proc *initproc;
 
@@ -41,7 +42,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->numTicks = 0;
+  p->ticks = 0;
   p->syscallCount = 0;
   p->priority = 50; // Default priority
   p->ticks = 0; // Default scheduled 0 times
