@@ -1,6 +1,10 @@
 #ifndef _USER_H_
 #define _USER_H_
 
+// #include "kernel/pstat.h"
+#include "pstat.h"
+
+
 struct stat;
 
 // system calls
@@ -45,6 +49,9 @@ void free(void*);
 int atoi(const char*);
 
 int thirdpart(void);
+
+int settickets(int);//part A
+int getpinfo(struct pstat *);// part A
 
 #endif // _USER_H_
 

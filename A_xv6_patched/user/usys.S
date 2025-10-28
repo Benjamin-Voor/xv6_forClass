@@ -33,3 +33,5 @@ SYSCALL(PartA)
 SYSCALL(PartB)
 SYSCALL(PartC)
 SYSCALL(ps)
+SYSCALL(settickets) // Mini-Project 2
+SYSCALL(getpinfo) // Mini-Project 2

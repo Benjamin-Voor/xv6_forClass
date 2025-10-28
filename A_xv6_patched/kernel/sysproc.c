@@ -5,12 +5,12 @@
 #include "mmu.h"
 #include "proc.h"
 #include "sysfunc.h"
+#include "pstat.h"
+#include "spinlock.h"
 
-// baseline-1.pdf
-#include "pstat.h"    // I assume
-#include "spinlock.h" // I assume
 
-int counterA = 0; // Mini-project 1
+
+int counterA = 0; // Mini-Project 1
 
 int
 sys_fork(void)
@@ -57,16 +57,18 @@ sys_PartA(void) // Mini-project 1
 int
 sys_PartB(void) // Mini-project 1
 {
+  extern int counterB; // declared in defs.h
   return counterB;
 }
 
 int
 sys_PartC(void) // Mini-project 1
 {
+  extern int counterC; // declared in defs.h
   return counterC;
 }
 
-int 
+int
 sys_sbrk(void)
 {
   int addr;
@@ -85,7 +87,7 @@ sys_sleep(void)
 {
   int n;
   uint ticks0;
-  
+
   if(argint(0, &n) < 0)
     return -1;
   acquire(&tickslock);
@@ -107,7 +109,7 @@ int
 sys_uptime(void)
 {
   uint xticks;
-  
+
   acquire(&tickslock);
   xticks = ticks;
   release(&tickslock);
@@ -116,7 +118,7 @@ sys_uptime(void)
 
 extern int syscall_counter; // part c
 
-int 
+int
 sys_thirdpart(void)
 {
   return syscall_counter;

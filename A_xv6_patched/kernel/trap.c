@@ -21,7 +21,7 @@ tvinit(void)
   for(i = 0; i < 256; i++)
     SETGATE(idt[i], 0, SEG_KCODE<<3, vectors[i], 0);
   SETGATE(idt[T_SYSCALL], 1, SEG_KCODE<<3, vectors[T_SYSCALL], DPL_USER);
-  
+
   initlock(&tickslock, "time");
 }
 
@@ -52,30 +52,44 @@ trap(struct trapframe *tf)
       wakeup(&ticks);
       release(&tickslock);
     }
+
+    // Part A: count a scheduling tick for the currently running process.
+    // Use the global 'proc' used in this xv6 tree.
+    if(proc != 0 /* && proc->state == RUNNING */){
+      // Counting regardless of exact state is fine; uncomment the state
+      // check above if you prefer to count only while RUNNING.
+      proc->ticks++;
+    }
+
     lapiceoi();
     break;
+
   case T_IRQ0 + IRQ_IDE:
     ideintr();
     lapiceoi();
     break;
+
   case T_IRQ0 + IRQ_IDE+1:
     // Bochs generates spurious IDE1 interrupts.
     break;
+
   case T_IRQ0 + IRQ_KBD:
     kbdintr();
     lapiceoi();
     break;
+
   case T_IRQ0 + IRQ_COM1:
     uartintr();
     lapiceoi();
     break;
+
   case T_IRQ0 + 7:
   case T_IRQ0 + IRQ_SPURIOUS:
     cprintf("cpu%d: spurious interrupt at %x:%x\n",
             cpu->id, tf->cs, tf->eip);
     lapiceoi();
     break;
-   
+
   default:
     if(proc == 0 || (tf->cs&3) == 0){
       // In kernel, it must be our mistake.
@@ -86,7 +100,7 @@ trap(struct trapframe *tf)
     // In user space, assume process misbehaved.
     cprintf("pid %d %s: trap %d err %d on cpu %d "
             "eip 0x%x addr 0x%x--kill proc\n",
-            proc->pid, proc->name, tf->trapno, tf->err, cpu->id, tf->eip, 
+            proc->pid, proc->name, tf->trapno, tf->err, cpu->id, tf->eip,
             rcr2());
     proc->killed = 1;
   }

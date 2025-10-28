@@ -16,8 +16,6 @@ struct {
 
 static struct proc *initproc;
 
-
-
 int nextpid = 1;
 extern void forkret(void);
 extern void trapret(void);
@@ -42,23 +40,32 @@ allocproc(void)
 
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  { // baseline-1.pdf has no braces here, but it makes sense, yaknow?
     if(p->state == UNUSED)
       goto found;
+  }
   release(&ptable.lock);
   return 0;
 
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  // Mini-Project 1, Part c
+  p->syscallCount = 0;   // Initialize your part C counter  for initialize syscall counter
+
+  // Mini-project 2, Part A
   p->numTicks = 0; // baseline-1.pdf
-  p->syscallCount = 0;   // Mini-Project 1, Part c for initialize syscall counter
-  p->tickets = 1;   // Mini-Project 2:
-  p->ticks = 0;     // Part A
+  p->tickets = 1;   // each proc starts with one ticket
+  p->ticks = 0;     // no CPU time yet
+
   release(&ptable.lock);
 
   // Allocate kernel stack if possible.
   if((p->kstack = kalloc()) == 0){
+    // Need the lock to safely touch p->state.
+    acquire(&ptable.lock);
     p->state = UNUSED;
+    release(&ptable.lock);
     return 0;
   }
   sp = p->kstack + KSTACKSIZE;
@@ -72,6 +79,7 @@ found:
   sp -= 4;
   *(uint*)sp = (uint)trapret;
 
+  // Context to start at forkret
   sp -= sizeof *p->context;
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
@@ -86,10 +94,14 @@ userinit(void)
 {
   struct proc *p;
   extern char _binary_initcode_start[], _binary_initcode_size[];
+
+  p = allocproc();               // <-- get a proc FIRST
+  if(p == 0)
+    panic("userinit: allocproc failed");
   
-  p = allocproc();
-  acquire(&ptable.lock);
   initproc = p;
+
+  // Set up page table and first user page.
   if((p->pgdir = setupkvm()) == 0)
     panic("userinit: out of memory?");
   inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
@@ -101,11 +113,16 @@ userinit(void)
   p->tf->ss = p->tf->ds;
   p->tf->eflags = FL_IF;
   p->tf->esp = PGSIZE;
-  p->tf->eip = 0;  // beginning of initcode.S
+  p->tf->eip = 0;   // beginning of initcode.S
+
+  // (Optional – allocproc already did this, but harmless to keep)
+  p->tickets = 1;
+  p->ticks   = 0;
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
 
+  acquire(&ptable.lock);
   p->state = RUNNABLE;
   release(&ptable.lock);
 }
@@ -150,7 +167,9 @@ fork(void)
   if((np->pgdir = copyuvm(proc->pgdir, proc->sz)) == 0){
     kfree(np->kstack);
     np->kstack = 0;
+    acquire(&ptable.lock);
     np->state = UNUSED;
+    release(&ptable.lock);
     return -1;
   }
   np->sz = proc->sz;
@@ -164,10 +183,18 @@ fork(void)
     if(proc->ofile[i])
       np->ofile[i] = filedup(proc->ofile[i]);
   np->cwd = idup(proc->cwd);
- 
+
+  // Inherit scheduling params
+  np->tickets = proc->tickets;  // child inherits parent's tickets
+  np->ticks   = 0;              // fresh CPU time
+
   pid = np->pid;
-  np->state = RUNNABLE;
   safestrcpy(np->name, proc->name, sizeof(proc->name));
+
+  acquire(&ptable.lock);
+  np->state = RUNNABLE;
+  release(&ptable.lock);
+
   return pid;
 }
 
@@ -257,7 +284,7 @@ wait(void)
   }
 }
 
-// Per-CPU process scheduler.
+// Per-CPU process round-robin scheduler (you can later swap in lottery).
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
 //  - choose a process to run
@@ -481,40 +508,41 @@ procdump(void)
 struct proc*
 myproc(void)
 {
-  return proc;   // use the global directly
+  return proc;   // using the global directly is fine in this codebase
 }
 
 
 int 
 ps(void) // baseline-1.pdf
 {
-  struct proc *p; 
+  struct proc *p;
   char *state;
 
   cprintf("PID\tState\t\tMemory Size\tProcess Name\n");
 
   acquire(&ptable.lock);
-  for(p=ptable.proc; p < &ptable.proc[NPROC]; ++p) {
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; ++p) {
     if(p->state == UNUSED) {
       continue;
     } 
-    if(p->state==SLEEPING) {
-      state="SLEEPING";
+    if(p->state == SLEEPING) {
+      state = "SLEEPING";
     } 
-    else if (p->state==RUNNING) {
-      state="RUNNING";
+    else if (p->state == RUNNING) {
+      state = "RUNNING";
     }
-    else if (p->state==ZOMBIE) {
-      state="ZOMBIE";
+    else if (p->state == ZOMBIE) {
+      state = "ZOMBIE";
     }
-    else if (p->state==EMBRYO)
+    else if (p->state == EMBRYO)
     {
-      state="EMBRYO";
+      state = "EMBRYO";
     }
     else {
-      state="OTHER";
+      state = "OTHER";
     }
-    cprintf("PID: %d\tState: %s\tMemory Size: %d\tProcess Name: %s\n", p->pid, state, p->sz, p->name);
+    cprintf("PID: %d\tState: %s\tMemory Size: %d\tProcess Name: %s\n",
+            p->pid, state, p->sz, p->name);
   }
   release(&ptable.lock);
 

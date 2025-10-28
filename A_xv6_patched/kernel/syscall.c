@@ -122,7 +122,7 @@ static int (*syscalls[])(void) = {
 [SYS_PartB]   sys_PartB,
 [SYS_PartC]   sys_PartC,
 
-// Abandoned! Mini-Project 2, Option 1, Part A
+// baseline-1.pdf
 [SYS_ps]      sys_ps,
 
 // Mini-Project 2, Option 2
