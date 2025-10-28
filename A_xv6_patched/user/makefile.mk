@@ -23,7 +23,20 @@ USER_PROGS := \
 	part_b_test\
 	part_c_test\
 	ps\
+	pstester\
+	childrentester\
+	store\
 	zombie
+
+# Since commenting is weird in this file, here's comments for USER_PROGS:
+	# getpid and part_a/b/c_test are mini-project 1
+	# zombie is still kept on the end so that the backslashes don't mess up
+### USER_PROGS: Mini-project 2
+	# ps, pstester, childrenTester, and store are in the baseline, and ps gets used in part A
+	# tickettest tests part A (prioritytest should not be in this file, because that tests part B)
+	# tester and usertests are written by DeadpriZma
+	# Soon, I will fix tickettest.c, then that will join USER_PROGS
+	
 
 USER_PROGS := $(addprefix user/, $(USER_PROGS))
 
