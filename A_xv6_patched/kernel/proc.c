@@ -9,6 +9,16 @@
 
 int syscall_counter = 0; // Mini-project 1
 
+/* Mini-project 2 */
+// #include <stdlib.h> // "rand()" for lottery scheduler // failing because of kernel/makefile.mk:68
+static unsigned long rand_next = 1;
+int
+random(void)
+{
+  rand_next *= 1103515245 + 12345;
+  return (unsigned int)(rand_next / 65536) % 32768;
+}
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
