@@ -1,5 +1,5 @@
 // TODO: Increase number of child processes from 3 to 5. Refer to Programming Assignment 1
-// TODO: Print number of tickets instead of just "404"
+// TODO: Print number of tickets instead of just "1"
 // TODO: graph
 
 // Part A only: Test lottery scheduler
