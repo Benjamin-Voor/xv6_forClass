@@ -173,6 +173,8 @@ fork(void)
   // // In fork(), after acquiring lock and before copying state
   // np->tickets = curproc->tickets;
 
+  np->tickets = proc->tickets;
+
   // Copy process state from p.
   if((np->pgdir = copyuvm(proc->pgdir, proc->sz)) == 0){
     kfree(np->kstack);
@@ -307,7 +309,7 @@ scheduler(void)
   struct proc *p;
   // struct cpu *c; // Don't need it. Usages must be commented out or removed.
   // *c = mycpu(); 
-  proc = 0; // ¿Maybe cpu->proc = 0?
+  cpu->proc = 0; // ¿Maybe cpu->proc = 0?
 
   for(;;){
     // Enable interrupts on this processor.
@@ -334,7 +336,7 @@ scheduler(void)
           winner -= p->tickets;
           if(winner < 0){
             // This process wins!
-            proc = p; // ¿Maybe cpu->proc = p;
+            cpu->proc = p; // ¿Maybe cpu->proc = p;
             switchuvm(p);
             p->state = RUNNING;
 
@@ -344,7 +346,7 @@ scheduler(void)
             swtch(&cpu->scheduler, p->context); // "&(scheduler)" error: passing argument 1 of ‘swtch’ from incompatible pointer type
             switchkvm();
 
-            proc = 0;
+            cpu->proc = 0;
             break;
           }
         }
@@ -611,13 +613,15 @@ int
 sys_getpinfo(void) // Mini-Project 2 // part A only, Lottery Scheduler
 {
   struct pstat *ps;
+
   if (argptr(0, (void *)&ps, sizeof(*ps)) < 0)
     return -1;
 
-
   struct proc *p;
-  int i = 0; 
+  int i = 0;
+
   acquire(&ptable.lock);
+
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++, i++)
   {
     if (p->state == UNUSED)
@@ -627,9 +631,7 @@ sys_getpinfo(void) // Mini-Project 2 // part A only, Lottery Scheduler
     else
     {
       ps->inuse[i] = 1;
-      // ps->tickets[i] = p->tickets;
-      // error: ‘struct pstat’ has no member named ‘tickets’; did you mean ‘ticks’?
-      ps->ticks[i] = p->ticks;
+      ps->tickets[i] = p->tickets;
       ps->pid[i] = p->pid;
       ps->ticks[i] = p->ticks;
     }
