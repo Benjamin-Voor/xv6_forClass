@@ -5,4 +5,4 @@
 #include "proc.h"
 #include "ptable.h"
 
-struct ptable_struct ptable;
+struct ptable_struct ptable; // Create ptable in memory

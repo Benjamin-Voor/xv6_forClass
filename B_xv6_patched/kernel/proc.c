@@ -42,10 +42,9 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->ticks = 0;
+  p->ticks = 0; // Scheduled 0 times by default
   p->syscallCount = 0;
   p->priority = 50; // Default priority
-  p->ticks = 0; // Default scheduled 0 times
   release(&ptable.lock);
 
   // Allocate kernel stack if possible.
