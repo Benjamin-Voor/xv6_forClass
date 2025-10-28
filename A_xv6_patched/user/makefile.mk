@@ -25,6 +25,7 @@ USER_PROGS := \
 	ps\
 	pstester\
 	childrentester\
+	tickettest\
 	store\
 	zombie
 
