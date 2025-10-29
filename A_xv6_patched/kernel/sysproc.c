@@ -134,4 +134,14 @@ int sys_settickets(void); // Mini-Project 2, Part A
 
 // Implementation is in proc.c
 int
-sys_getpinfo(void); // Mini-Project 2, Part A
+sys_getpinfo(void) { // Mini-Project 2, Part A
+  struct pstat *pInfo;
+  if(argptr(0, (void *)&pInfo, sizeof(*pInfo) < 0)){
+    return -1;
+  }
+  if(pInfo == NULL){
+    return -1;
+  }
+  getpinfo(pInfo);
+  return 0;
+} 

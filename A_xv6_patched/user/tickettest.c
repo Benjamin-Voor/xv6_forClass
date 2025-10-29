@@ -1,5 +1,3 @@
-// TODO: Increase number of child processes from 3 to 5. Refer to Programming Assignment 1
-// TODO: Print number of tickets instead of just "1"
 // TODO: graph
 
 // Part A only: Test lottery scheduler
@@ -26,37 +24,38 @@ main(void)
 {
     struct pstat st;
     int pid;
-    int tickets[] = {10, 20, 30, 40, 50}; // 2. Assigns different ticket counts: 10, 20, 30, 40, 50
+    int tickets[] = {10, 20, 30, 40, 50}; // Rubric entry #2
     int n = 5;
 
     printf(1, "Starting tickettest...\n");
-
+    // printf(1, "Debugging: int tickets[] = {"); // debugging
     for (int i = 0; i < n; i++) {
-        pid = fork(); // 1. Creates 5 child processes using fork()
+        pid = fork(); // Rubric entry #1
         if (pid == 0) {
             settickets(tickets[i]);
-            // Busy work loop // 3. Has each process do CPU-intensive work (loop)
+            // Busy work loop // Rubric entry #3
             for (volatile int j = 0; j < 10000000; j++);
-            // exit(0);
             exit(); // TODO: continue making forks until you get to 5
         }
     }
-
     for (int i = 0; i < n; i++)
-        // wait(0); // No, it's a void func
         wait();
-
-    if (getpinfo(&st) < 0) { // 4. Calls getpinfo() to collect scheduling statistics
+    // sleep(100); // Nvm, AI is stupid!
+    // printf(1, "}\n"); // debugging
+    printf(1, "p->tickets: {");
+    if (getpinfo(&st) < 0) { // Rubric entry #4
         printf(1, "getpinfo failed\n");
-        // exit(1);
         exit();
     }
+    printf(1, "}\n");
 
-    printf(1, "PID\tTickets\tTicks\n"); // 5. Displays results showing ticket count vs actual CPU time
-    for (int i = 0; i < NPROC; i++) {
-        if (st.inuse[i]) {
-            printf(1, "%d\t%d\t%d\n", st.pid[i], st.tickets[i], st.ticks[i]);
-        }
+
+
+    printf(1, "PID, Tickets, Ticks\n");
+    for (int i = 3; i < NPROC; i++) {
+        // if (! st.inuse[i]) { continue; }
+        if (! (st.ticks[i] || st.tickets[i])) { continue; }
+        printf(1, "%d, %d, %d\n", i, st.tickets[i], st.ticks[i]);
     }
 
     // exit(0); // No, it's a void func

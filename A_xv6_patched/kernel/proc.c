@@ -553,8 +553,8 @@ ps(void) // baseline-1.pdf
     else {
       state = "OTHER";
     }
-    cprintf("PID: %d\tState: %s\tMemory Size: %d\tProcess Name: %s\n",
-            p->pid, state, p->sz, p->name);
+    cprintf("PID: %d\tState: %s\tMemory Size: %d\tProcess Name: %s\tTickets: %s\n",
+            p->pid, state, p->sz, p->name, p->tickets);
   }
   release(&ptable.lock);
 
@@ -567,7 +567,7 @@ getpinfo(struct pstat* pInfo) // baseline-1.pdf
   struct proc *p; 
   int i=0;
   acquire(&ptable.lock);
-  for(p=ptable.proc; p < &ptable.proc[NPROC]; ++p) {
+  for(p=ptable.proc; p < &ptable.proc[NPROC]; p++, i++) {
     if (p->state==ZOMBIE || p->state == EMBRYO) {
       continue;
     }
@@ -577,10 +577,16 @@ getpinfo(struct pstat* pInfo) // baseline-1.pdf
     else {
       pInfo->inuse[i] = 1;
     }
+    // cprintf("%d, ", p->state); // debugging
     pInfo->pid[i] = p->pid;
+    // cprintf("%d, ", pInfo->pid[i]); // debugging
     pInfo->ticks[i] = p->ticks;
+    // cprintf("%d, ", pInfo->ticks[i]); // debugging
     pInfo->size[i] = p->sz; // error: 'struct proc' has no member named 'size'; did you mean 'sz'?
-    i++;
+    pInfo->tickets[i] = p->tickets;
+    cprintf("%d ", p->tickets);
+    // i++; // This is done within the for loop
+    // cprintf("%d, ", i);
   }
   release(&ptable.lock);
   return 0;
@@ -603,20 +609,22 @@ int sys_settickets(void) // Mini-Project 2, Part A
 
   acquire(&ptable.lock); // This line gives me the error that identifier "ptable" is undefined. It's defined in proc.c, not in sysproc.c
   myproc()->tickets = n;
+  // cprintf("%d, ", cpu->proc->tickets); // debugging
   release(&ptable.lock);
 
   return 0;
 }
 
+/* No regerts
 // Prototype is in sysproc.c
 int
 sys_getpinfo(void) // Mini-Project 2 // part A only, Lottery Scheduler
 {
   struct pstat *ps;
 
-  if (argptr(0, (void *)&ps, sizeof(*ps)) < 0)
+  if (argptr(0, (void *)&ps, sizeof(*ps)) < 0) {
     return -1;
-
+  }
   struct proc *p;
   int i = 0;
 
@@ -640,3 +648,4 @@ sys_getpinfo(void) // Mini-Project 2 // part A only, Lottery Scheduler
   release(&ptable.lock);
   return 0;
 }
+*/
