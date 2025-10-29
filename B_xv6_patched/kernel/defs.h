@@ -85,9 +85,6 @@ int             mpbcpu(void);
 void            mpinit(void);
 void            mpstartthem(void);
 
-// Part B (Priority scheduler)
-int setpriority(int);
-
 // picirq.c
 void            picenable(int);
 void            picinit(void);
@@ -113,6 +110,9 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
+// Part B (Priority scheduler)
+int             setpriority(int);
+int             getpinfo(struct pstat*);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

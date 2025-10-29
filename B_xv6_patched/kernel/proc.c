@@ -42,9 +42,9 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->ticks = 0; // Scheduled 0 times by default
   p->syscallCount = 0;
   p->priority = 50; // Default priority
+  p->numTicks = 0; // Scheduled 0 times by default
   release(&ptable.lock);
 
   // Allocate kernel stack if possible.
@@ -147,7 +147,7 @@ fork(void)
 
   // Inherit priority from parent
   np->priority = proc->priority;
-  np->ticks = 0; // Reset counter for new process
+  np->numTicks = 0; // Reset counter for new process
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -260,57 +260,56 @@ void
 scheduler(void)
 {
   struct proc *p;
-  proc = 0;
-  static struct proc *last_sched = 0; // For RR in priority
+  static struct proc *last_sched = 0; // For RR
 
-  for(;;) {
-    sti(); // enable interrupts
+  for(;;){
+    sti();
     acquire(&ptable.lock);
-    int highest_priority = 201; // above max possible priority
 
-    // Find highest priority among RUNNABLE processes
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-      if(p->state == RUNNABLE && p->priority < highest_priority) {
+    // Find highest priority (minimum value)
+    int highest_priority = 201; // Higher than max valid priority
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state == RUNNABLE && p->priority < highest_priority){
         highest_priority = p->priority;
       }
     }
 
-    // Round-robin among processes with that priority
-    struct proc *selected = 0;
+    // Round-robin among processes with highest priority
     struct proc *start = last_sched ? last_sched + 1 : ptable.proc;
+    struct proc *selected = 0;
 
     // Search from last_sched to end
-    for(p = start; p < &ptable.proc[NPROC]; p++) {
-      if(p->state == RUNNABLE && p->priority == highest_priority) {
+    for(p = start; p < &ptable.proc[NPROC]; p++){
+      if(p->state == RUNNABLE && p->priority == highest_priority){
         selected = p;
         break;
       }
     }
 
-    // If not found, wrap around
-    if(selected == 0) {
-      for(p = ptable.proc; p < start; p++) {
-        if(p->state == RUNNABLE && p->priority == highest_priority) {
+    // Wrap around if not found
+    if(selected == 0){
+      for(p = ptable.proc; p < start; p++){
+        if(p->state == RUNNABLE && p->priority == highest_priority){
           selected = p;
           break;
         }
       }
     }
 
-    if(selected != 0) {
+    if(selected != 0){
       p = selected;
       last_sched = p;
 
-      cpu->proc = p;
+      proc = p;
       switchuvm(p);
       p->state = RUNNING;
-      p->ticks++;
-      swtch(&cpu->scheduler, p->context);  // use global cpu here
-      switchkvm();
+      p->numTicks++;
 
-      cpu->proc = 0;
+      swtch(&(cpu->scheduler), p->context);
+      switchkvm();
+      proc = 0;
     }
-    release(&ptable.lock);
+  release(&ptable.lock);
   }
 }
 
@@ -521,18 +520,22 @@ getpinfo(struct pstat *pInfo)
 {
     struct proc *p; 
     int i = 0;
-
     acquire(&ptable.lock);
-    for (p = ptable.proc; p < &ptable.proc[NPROC]; ++p, ++i) {
-        if (p->state == UNUSED)
-            pInfo->inuse[i] = 0;
-        else {
-            pInfo->inuse[i] = 1;
-            pInfo->pid[i] = p->pid;
-            pInfo->ticks[i] = p->ticks;
-            pInfo->priority[i] = p->priority;
-            pInfo->size[i] = p->sz;
-        }
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if(p->state == ZOMBIE || p->state == EMBRYO) {
+        continue;
+      }
+      if(p->state == UNUSED) {
+        pInfo -> inuse[i] = 0;
+      }
+      else {
+        pInfo->inuse[i] = 1;
+      }
+      pInfo->pid[i] = p->pid;
+      pInfo->ticks[i] = p->numTicks;
+      pInfo->size[i] = p->sz;
+      pInfo->priority[i] = p->priority;
+      i++;
     }
     release(&ptable.lock);
     return 0;

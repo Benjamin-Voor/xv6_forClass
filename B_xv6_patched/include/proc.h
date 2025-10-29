@@ -85,7 +85,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int priority;                // Scheduling priority (0-200, 0 is highest)
-  int ticks;                   // # of time the process is scheduled
+  int numTicks;                   // # of time the process is scheduled
 
   int syscallCount;            // Part c, number of syscalls this process has made
 };

@@ -6,11 +6,13 @@
 #include "x86.h"
 #include "syscall.h"
 #include "sysfunc.h"
+#include "pstat.h"
 
 extern int sys_PartB(void);
 extern int sys_PartC(void);
 extern int sys_ps(void);
 extern int sys_setpriority(void);
+extern int sys_getpinfo(void);
 
 int counterB = 0;
 int counterC = 0;
@@ -115,7 +117,8 @@ static int (*syscalls[])(void) = {
 [SYS_PartB]   sys_PartB,
 [SYS_PartC]   sys_PartC,
 [SYS_ps]      sys_ps,
-[SYS_setpriority] sys_setpriority
+[SYS_setpriority] sys_setpriority,
+[SYS_getpinfo] sys_getpinfo
 };
 
 // Called on a syscall trap. Checks that the syscall number (passed via eax)
@@ -138,3 +141,15 @@ syscall(void)
     proc->tf->eax = -1;
   }
 }
+
+// int sys_getpinfo(void) {
+//   struct pstat *pInfo;
+//   if(argptr(0, (void *)&pInfo, sizeof(*pInfo)) < 0) {
+//     return -1;
+//   }
+//   if(pInfo == NULL) {
+//     return -1;
+//   }
+//   getpinfo(pInfo);
+//   return 0;
+// }
