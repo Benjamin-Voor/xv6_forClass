@@ -81,6 +81,10 @@ struct proc {
   char name[16];               // Process name (debugging)
 
   int syscallCount;            // Part c, number of syscalls this process has made
+
+  int tickets;                 // Number of lottery tickets // Part A only
+  int ticks;                   // Number of times scheduled // Part A only
+  int numTicks;                // Counts the number of times a process has been scheduled //baseline-1.pdf
 };
 
 // Process memory is laid out contiguously, low addresses first:

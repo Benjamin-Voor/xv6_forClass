@@ -11,8 +11,14 @@ extern int sys_PartB(void);
 extern int sys_PartC(void);
 extern int sys_ps(void);
 
+/*=== Mini-Project 1 ===*/
 int counterB = 0;
 int counterC = 0;
+
+/*=== Mini-Project 2 ===*/
+extern int sys_settickets(void);
+extern int sys_getpinfo(void);
+extern int sys_setpriority(void);
 
 // User code makes a system call with INT T_SYSCALL.
 // System call number in %eax.
@@ -110,10 +116,19 @@ static int (*syscalls[])(void) = {
 [SYS_write]   sys_write,
 [SYS_uptime]  sys_uptime,
 [SYS_getpid]  sys_getpid,
-[SYS_PartA]   sys_PartA,
+
+// Mini-Project 1
+[SYS_PartA]   sys_PartA, 
 [SYS_PartB]   sys_PartB,
 [SYS_PartC]   sys_PartC,
+
+// baseline-1.pdf
 [SYS_ps]      sys_ps,
+
+// Mini-Project 2, Option 2
+[SYS_settickets]  sys_settickets,
+[SYS_getpinfo] sys_getpinfo,
+// [SYS_setpriority] sys_setpriority, // Part B
 };
 
 // Called on a syscall trap. Checks that the syscall number (passed via eax)

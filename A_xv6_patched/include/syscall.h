@@ -23,9 +23,15 @@
 #define SYS_sbrk   19
 #define SYS_sleep  20
 #define SYS_uptime 21
-#define SYS_PartA  22
-#define SYS_PartB  23
-#define SYS_PartC  24
-#define SYS_ps     25
+
+#define SYS_PartA  22 // Mini-Project 1
+#define SYS_PartB  23 // Mini-Project 1
+#define SYS_PartC  24 // Mini-Project 1
+
+#define SYS_ps     25 // Abandoned! Mini-Project 2, Option 1, Part A
+
+// Mini-Project 2, Option 2, Part A
+#define SYS_settickets  26
+#define SYS_getpinfo    27
 
 #endif // _SYSCALL_H_

@@ -3,7 +3,7 @@
 #include "user.h"
 
 int main(void) {
-    printf("Starting ps..."); // debugging
+    printf(1, "Starting ps...\n"); // debugging
     ps();
     exit();
 }

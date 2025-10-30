@@ -5,8 +5,12 @@
 #include "mmu.h"
 #include "proc.h"
 #include "sysfunc.h"
+#include "pstat.h"
+#include "spinlock.h"
 
-int counterA = 0;
+
+
+int counterA = 0; // Mini-Project 1
 
 int
 sys_fork(void)
@@ -18,7 +22,7 @@ int
 sys_exit(void)
 {
   exit();
-  return 0;  // not reached
+  return 0; // not reached
 }
 
 int
@@ -38,27 +42,29 @@ sys_kill(void)
 }
 
 int
-sys_getpid(void)
+sys_getpid(void) // Mini-project 1
 {
   counterA++;
   return proc->pid;
 }
 
 int
-sys_PartA(void)
+sys_PartA(void) // Mini-project 1
 {
   return counterA;
 }
 
 int
-sys_PartB(void)
+sys_PartB(void) // Mini-project 1
 {
+  extern int counterB; // declared in defs.h
   return counterB;
 }
 
 int
-sys_PartC(void)
+sys_PartC(void) // Mini-project 1
 {
+  extern int counterC; // declared in defs.h
   return counterC;
 }
 
@@ -81,7 +87,7 @@ sys_sleep(void)
 {
   int n;
   uint ticks0;
-  
+
   if(argint(0, &n) < 0)
     return -1;
   acquire(&tickslock);
@@ -103,23 +109,39 @@ int
 sys_uptime(void)
 {
   uint xticks;
-  
+
   acquire(&tickslock);
   xticks = ticks;
   release(&tickslock);
   return xticks;
 }
 
+extern int syscall_counter; // part c
 
-
-extern int syscall_counter; //part c
-
-int 
-sys_thirdpart(void){
+int
+sys_thirdpart(void)
+{
   return syscall_counter;
 }
 int
-sys_ps(void)
+sys_ps(void) // baseline-1.pdf
 {
   return ps(); // implemented in kernel/proc.c
 }
+
+// Implementation is in proc.c
+int sys_settickets(void); // Mini-Project 2, Part A
+
+// Implementation is in proc.c
+int
+sys_getpinfo(void) { // Mini-Project 2, Part A
+  struct pstat *pInfo;
+  if(argptr(0, (void *)&pInfo, sizeof(*pInfo) < 0)){
+    return -1;
+  }
+  if(pInfo == NULL){
+    return -1;
+  }
+  getpinfo(pInfo);
+  return 0;
+} 

@@ -4,10 +4,20 @@
 #include "mmu.h"
 #include "x86.h"
 #include "proc.h"
+#include "pstat.h" // baseline-1.pdf // I assume
 #include "spinlock.h"
 
-int syscall_counter = 0;
+int syscall_counter = 0; // Mini-project 1
 
+/* Mini-project 2 */
+// #include <stdlib.h> // "rand()" for lottery scheduler // failing because of kernel/makefile.mk:68
+static unsigned long rand_next = 1;
+int
+random(void)
+{
+  rand_next *= 1103515245 + 12345;
+  return (unsigned int)(rand_next / 65536) % 32768;
+}
 
 struct {
   struct spinlock lock;
@@ -15,8 +25,6 @@ struct {
 } ptable;
 
 static struct proc *initproc;
-
-
 
 int nextpid = 1;
 extern void forkret(void);
@@ -42,20 +50,32 @@ allocproc(void)
 
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  { // baseline-1.pdf has no braces here, but it makes sense, yaknow?
     if(p->state == UNUSED)
       goto found;
+  }
   release(&ptable.lock);
   return 0;
 
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->syscallCount = 0;   // Part c for initialize syscall counter
+  // Mini-Project 1, Part c
+  p->syscallCount = 0;   // Initialize your part C counter  for initialize syscall counter
+
+  // Mini-project 2, Part A
+  p->numTicks = 0; // baseline-1.pdf
+  p->tickets = 1;   // each proc starts with one ticket
+  p->ticks = 0;     // no CPU time yet
+
   release(&ptable.lock);
 
   // Allocate kernel stack if possible.
   if((p->kstack = kalloc()) == 0){
+    // Need the lock to safely touch p->state.
+    acquire(&ptable.lock);
     p->state = UNUSED;
+    release(&ptable.lock);
     return 0;
   }
   sp = p->kstack + KSTACKSIZE;
@@ -69,6 +89,7 @@ found:
   sp -= 4;
   *(uint*)sp = (uint)trapret;
 
+  // Context to start at forkret
   sp -= sizeof *p->context;
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
@@ -83,10 +104,14 @@ userinit(void)
 {
   struct proc *p;
   extern char _binary_initcode_start[], _binary_initcode_size[];
+
+  p = allocproc();               // <-- get a proc FIRST
+  if(p == 0)
+    panic("userinit: allocproc failed");
   
-  p = allocproc();
-  acquire(&ptable.lock);
   initproc = p;
+
+  // Set up page table and first user page.
   if((p->pgdir = setupkvm()) == 0)
     panic("userinit: out of memory?");
   inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
@@ -98,11 +123,16 @@ userinit(void)
   p->tf->ss = p->tf->ds;
   p->tf->eflags = FL_IF;
   p->tf->esp = PGSIZE;
-  p->tf->eip = 0;  // beginning of initcode.S
+  p->tf->eip = 0;   // beginning of initcode.S
+
+  // (Optional – allocproc already did this, but harmless to keep)
+  p->tickets = 1;
+  p->ticks   = 0;
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
 
+  acquire(&ptable.lock);
   p->state = RUNNABLE;
   release(&ptable.lock);
 }
@@ -140,11 +170,18 @@ fork(void)
   if((np = allocproc()) == 0)
     return -1;
 
+  // // In fork(), after acquiring lock and before copying state
+  // np->tickets = curproc->tickets;
+
+  np->tickets = proc->tickets;
+
   // Copy process state from p.
   if((np->pgdir = copyuvm(proc->pgdir, proc->sz)) == 0){
     kfree(np->kstack);
     np->kstack = 0;
+    acquire(&ptable.lock);
     np->state = UNUSED;
+    release(&ptable.lock);
     return -1;
   }
   np->sz = proc->sz;
@@ -158,10 +195,18 @@ fork(void)
     if(proc->ofile[i])
       np->ofile[i] = filedup(proc->ofile[i]);
   np->cwd = idup(proc->cwd);
- 
+
+  // Inherit scheduling params
+  np->tickets = proc->tickets;  // child inherits parent's tickets
+  np->ticks   = 0;              // fresh CPU time
+
   pid = np->pid;
-  np->state = RUNNABLE;
   safestrcpy(np->name, proc->name, sizeof(proc->name));
+
+  acquire(&ptable.lock);
+  np->state = RUNNABLE;
+  release(&ptable.lock);
+
   return pid;
 }
 
@@ -251,7 +296,7 @@ wait(void)
   }
 }
 
-// Per-CPU process scheduler.
+// Per-CPU process round-robin scheduler (you can later swap in lottery).
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
 //  - choose a process to run
@@ -262,6 +307,9 @@ void
 scheduler(void)
 {
   struct proc *p;
+  // struct cpu *c; // Don't need it. Usages must be commented out or removed.
+  // *c = mycpu(); 
+  cpu->proc = 0; // ¿Maybe cpu->proc = 0?
 
   for(;;){
     // Enable interrupts on this processor.
@@ -269,25 +317,43 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
+
+    // Calculate total tickets from RUNNABLE processes
+    int total_tickets = 0; // part A only // Mini-project 2
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
-
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-      swtch(&cpu->scheduler, proc->context);
-      switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      proc = 0;
+      if(p->state == RUNNABLE)
+        total_tickets += p->tickets; // part A only // Mini-project 2
     }
-    release(&ptable.lock);
 
+    if(total_tickets > 0){ // Mini-Project 2, Part A, Step 3. This whole if-statement could have been inverted!
+      // Hold lottery
+      int winner = random() % total_tickets; // "random()" implemented in kernproc.c
+
+      // Find winning process
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state == RUNNABLE){
+          winner -= p->tickets;
+          if(winner < 0){
+            // This process wins!
+            cpu->proc = p; // ¿Maybe cpu->proc = p;
+            switchuvm(p);
+            p->state = RUNNING;
+
+            p->ticks++;   // Increment schedule count // part A only
+            p->numTicks += 1; // baseline-1.pdf
+            
+            swtch(&cpu->scheduler, p->context); // "&(scheduler)" error: passing argument 1 of ‘swtch’ from incompatible pointer type
+            switchkvm();
+
+            cpu->proc = 0;
+            break;
+          }
+        }
+      }
+    }
+
+    release(&ptable.lock);
   }
 }
 
@@ -454,39 +520,132 @@ procdump(void)
 struct proc*
 myproc(void)
 {
-  return proc;   // use the global directly
+  return proc;   // using the global directly is fine in this codebase
 }
 
 
 int 
-ps(void)
+ps(void) // baseline-1.pdf
 {
-  struct proc *p; 
+  struct proc *p;
   char *state;
 
   cprintf("PID\tState\t\tMemory Size\tProcess Name\n");
 
   acquire(&ptable.lock);
-  for(p=ptable.proc; p < &ptable.proc[NPROC]; ++p) {
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; ++p) {
     if(p->state == UNUSED) {
       continue;
     } 
-    if(p->state==SLEEPING) {
-      state="SLEEPING";
+    if(p->state == SLEEPING) {
+      state = "SLEEPING";
     } 
-    else if (p->state==RUNNING) {
-      state="RUNNING";
+    else if (p->state == RUNNING) {
+      state = "RUNNING";
     }
-    else if (p->state==ZOMBIE) {
-      state="ZOMBIE";
+    else if (p->state == ZOMBIE) {
+      state = "ZOMBIE";
+    }
+    else if (p->state == EMBRYO)
+    {
+      state = "EMBRYO";
     }
     else {
-      state="OTHER";
+      state = "OTHER";
     }
-    cprintf("PID: %d\tState: %s\tMemory Size: %d\tProcess Name: %s\n", p->pid, state, p->sz, p->name);
+    cprintf("PID: %d\tState: %s\tMemory Size: %d\tProcess Name: %s\tTickets: %s\n",
+            p->pid, state, p->sz, p->name, p->tickets);
   }
   release(&ptable.lock);
 
   return 0;
 }
 
+int
+getpinfo(struct pstat* pInfo) // baseline-1.pdf
+{
+  struct proc *p; 
+  int i=0;
+  acquire(&ptable.lock);
+  for(p=ptable.proc; p < &ptable.proc[NPROC]; p++, i++) {
+    if (p->state==ZOMBIE || p->state == EMBRYO) {
+      continue;
+    }
+    else if(p->state == UNUSED) {
+      pInfo->inuse[i] = 0; // #include "pstat.h"
+    } // PROCESS VARIABLES
+    else {
+      pInfo->inuse[i] = 1;
+    }
+    // cprintf("%d, ", p->state); // debugging
+    pInfo->pid[i] = p->pid;
+    // cprintf("%d, ", pInfo->pid[i]); // debugging
+    pInfo->ticks[i] = p->ticks;
+    // cprintf("%d, ", pInfo->ticks[i]); // debugging
+    pInfo->size[i] = p->sz; // error: 'struct proc' has no member named 'size'; did you mean 'sz'?
+    pInfo->tickets[i] = p->tickets;
+    cprintf("%d ", p->tickets);
+    // i++; // This is done within the for loop
+    // cprintf("%d, ", i);
+  }
+  release(&ptable.lock);
+  return 0;
+}
+
+// Prototype is in sysproc.c
+int sys_settickets(void) // Mini-Project 2, Part A
+{
+  int n;
+
+  if (argint(0, &n) < 0)
+  {
+    return -1;
+  }
+
+  if (n < 1)
+  {
+    return -1;
+  }
+
+  acquire(&ptable.lock); // This line gives me the error that identifier "ptable" is undefined. It's defined in proc.c, not in sysproc.c
+  myproc()->tickets = n;
+  // cprintf("%d, ", cpu->proc->tickets); // debugging
+  release(&ptable.lock);
+
+  return 0;
+}
+
+/* No regerts
+// Prototype is in sysproc.c
+int
+sys_getpinfo(void) // Mini-Project 2 // part A only, Lottery Scheduler
+{
+  struct pstat *ps;
+
+  if (argptr(0, (void *)&ps, sizeof(*ps)) < 0) {
+    return -1;
+  }
+  struct proc *p;
+  int i = 0;
+
+  acquire(&ptable.lock);
+
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++, i++)
+  {
+    if (p->state == UNUSED)
+    {
+      ps->inuse[i] = 0;
+    }
+    else
+    {
+      ps->inuse[i] = 1;
+      ps->tickets[i] = p->tickets;
+      ps->pid[i] = p->pid;
+      ps->ticks[i] = p->ticks;
+    }
+  }
+
+  release(&ptable.lock);
+  return 0;
+}
+*/
