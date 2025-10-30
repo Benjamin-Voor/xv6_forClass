@@ -260,56 +260,39 @@ void
 scheduler(void)
 {
   struct proc *p;
-  static struct proc *last_sched = 0; // For RR
-
+  struct cpu *c = mycpu();
+  c->proc = 0;
   for(;;){
     sti();
     acquire(&ptable.lock);
-
-    // Find highest priority (minimum value)
-    int highest_priority = 201; // Higher than max valid priority
+    // Calculate total tickets from RUNNABLE processes
+    int total_tickets = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state == RUNNABLE && p->priority < highest_priority){
-        highest_priority = p->priority;
-      }
+      if(p->state == RUNNABLE)
+       total_tickets += p->tickets;
     }
-
-    // Round-robin among processes with highest priority
-    struct proc *start = last_sched ? last_sched + 1 : ptable.proc;
-    struct proc *selected = 0;
-
-    // Search from last_sched to end
-    for(p = start; p < &ptable.proc[NPROC]; p++){
-      if(p->state == RUNNABLE && p->priority == highest_priority){
-        selected = p;
-        break;
-      }
-    }
-
-    // Wrap around if not found
-    if(selected == 0){
-      for(p = ptable.proc; p < start; p++){
-        if(p->state == RUNNABLE && p->priority == highest_priority){
-          selected = p;
+    if(total_tickets > 0){
+      // Hold lottery
+      int winner = random() % total_tickets;
+      // Find winning process
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state == RUNNABLE){
+          winner -= p->tickets;
+        if(winner < 0){
+        // This process wins!
+          c->proc = p;
+          switchuvm(p);
+          p->state = RUNNING;
+          p->ticks++; // Increment schedule count
+          swtch(&(c->scheduler), p->context);
+          switchkvm();
+          c->proc = 0;
           break;
         }
       }
     }
-
-    if(selected != 0){
-      p = selected;
-      last_sched = p;
-
-      proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-      p->numTicks++;
-
-      swtch(&(cpu->scheduler), p->context);
-      switchkvm();
-      proc = 0;
     }
-  release(&ptable.lock);
+    release(&ptable.lock);
   }
 }
 
