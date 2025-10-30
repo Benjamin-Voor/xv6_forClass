@@ -1,5 +1,10 @@
 #ifndef _FILE_H_
 #define _FILE_H_
+
+#include "fs.h"
+#include "spinlock.h"
+#include "stat.h"
+
 struct file {
   enum { FD_NONE, FD_PIPE, FD_INODE } type;
   int ref; // reference count

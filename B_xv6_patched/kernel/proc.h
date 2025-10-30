@@ -1,5 +1,10 @@
 #ifndef _PROC_H_
 #define _PROC_H_
+#include "types.h"
+#include "param.h"
+#include "mmu.h"
+#include "file.h"
+#include "spinlock.h"
 // Segments in proc->gdt.
 // Also known to bootasm.S and trapasm.S
 #define SEG_KCODE 1  // kernel code
@@ -79,6 +84,8 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  int priority;                // Scheduling priority (0-200, 0 is highest)
+  int numTicks;                   // # of time the process is scheduled
 
   int syscallCount;            // Part c, number of syscalls this process has made
 };

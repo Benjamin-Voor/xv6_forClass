@@ -2,6 +2,7 @@
 #define _USER_H_
 
 struct stat;
+struct pstat;
 
 // system calls
 int fork(void);
@@ -29,6 +30,8 @@ int PartA(void);
 int PartB(void);
 int PartC(void);
 int ps(void);
+int setpriority(int); // Part B (Priority scheduler)
+int getpinfo(struct pstat*);
 
 // user library functions (ulib.c)
 int stat(char*, struct stat*);

@@ -23,6 +23,9 @@ USER_PROGS := \
 	part_b_test\
 	part_c_test\
 	ps\
+	childrenTester\
+	store\
+	priorityTester\
 	zombie
 
 USER_PROGS := $(addprefix user/, $(USER_PROGS))

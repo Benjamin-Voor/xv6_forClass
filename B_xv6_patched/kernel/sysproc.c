@@ -5,8 +5,11 @@
 #include "mmu.h"
 #include "proc.h"
 #include "sysfunc.h"
+#include "ptable.h"
+#include "pstat.h"
 
 int counterA = 0;
+
 
 int
 sys_fork(void)
@@ -77,6 +80,33 @@ sys_sbrk(void)
 }
 
 int
+sys_setpriority(void)
+{
+  int priority;
+  
+  if(argint(0, &priority) < 0)
+    return -1;
+
+  if(priority < 0 || priority > 200)
+    return -1;
+
+  struct proc *p = myproc();
+  int old_priority;
+
+  acquire(&ptable.lock);
+  old_priority = p->priority;
+  p->priority = priority;
+  release(&ptable.lock);
+
+  // If new priority is lower (larger value), yield
+  if(priority > old_priority){
+    yield();
+  }
+
+  return old_priority;
+}
+
+int
 sys_sleep(void)
 {
   int n;
@@ -110,16 +140,21 @@ sys_uptime(void)
   return xticks;
 }
 
-
-
-extern int syscall_counter; //part c
-
-int 
-sys_thirdpart(void){
-  return syscall_counter;
-}
 int
 sys_ps(void)
 {
   return ps(); // implemented in kernel/proc.c
+}
+
+
+int sys_getpinfo(void) {
+  struct pstat *pInfo;
+  if(argptr(0, (void *)&pInfo, sizeof(*pInfo)) < 0) {
+    return -1;
+  }
+  if(pInfo == NULL) {
+    return -1;
+  }
+  getpinfo(pInfo);
+  return 0;
 }

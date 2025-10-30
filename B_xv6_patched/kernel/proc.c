@@ -4,19 +4,11 @@
 #include "mmu.h"
 #include "x86.h"
 #include "proc.h"
+#include "pstat.h" // baseline-1.pdf
 #include "spinlock.h"
-
-int syscall_counter = 0;
-
-
-struct {
-  struct spinlock lock;
-  struct proc proc[NPROC];
-} ptable;
+#include "ptable.h"
 
 static struct proc *initproc;
-
-
 
 int nextpid = 1;
 extern void forkret(void);
@@ -50,7 +42,9 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->syscallCount = 0;   // Part c for initialize syscall counter
+  p->syscallCount = 0;
+  p->priority = 50; // Default priority
+  p->numTicks = 0; // Scheduled 0 times by default
   release(&ptable.lock);
 
   // Allocate kernel stack if possible.
@@ -150,6 +144,10 @@ fork(void)
   np->sz = proc->sz;
   np->parent = proc;
   *np->tf = *proc->tf;
+
+  // Inherit priority from parent
+  np->priority = proc->priority;
+  np->numTicks = 0; // Reset counter for new process
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -262,32 +260,56 @@ void
 scheduler(void)
 {
   struct proc *p;
+  static struct proc *last_sched = 0; // For RR
 
   for(;;){
-    // Enable interrupts on this processor.
     sti();
-
-    // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
+    // Find highest priority (minimum value)
+    int highest_priority = 201; // Higher than max valid priority
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state == RUNNABLE && p->priority < highest_priority){
+        highest_priority = p->priority;
+      }
+    }
+
+    // Round-robin among processes with highest priority
+    struct proc *start = last_sched ? last_sched + 1 : ptable.proc;
+    struct proc *selected = 0;
+
+    // Search from last_sched to end
+    for(p = start; p < &ptable.proc[NPROC]; p++){
+      if(p->state == RUNNABLE && p->priority == highest_priority){
+        selected = p;
+        break;
+      }
+    }
+
+    // Wrap around if not found
+    if(selected == 0){
+      for(p = ptable.proc; p < start; p++){
+        if(p->state == RUNNABLE && p->priority == highest_priority){
+          selected = p;
+          break;
+        }
+      }
+    }
+
+    if(selected != 0){
+      p = selected;
+      last_sched = p;
+
       proc = p;
       switchuvm(p);
       p->state = RUNNING;
-      swtch(&cpu->scheduler, proc->context);
-      switchkvm();
+      p->numTicks++;
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
+      swtch(&(cpu->scheduler), p->context);
+      switchkvm();
       proc = 0;
     }
-    release(&ptable.lock);
-
+  release(&ptable.lock);
   }
 }
 
@@ -311,7 +333,7 @@ sched(void)
   cpu->intena = intena;
 }
 
-// Give up the CPU for one scheduling round.
+// Give up the CPU for one scheduling round. 
 void
 yield(void)
 {
@@ -480,6 +502,9 @@ ps(void)
     else if (p->state==ZOMBIE) {
       state="ZOMBIE";
     }
+    else if (p->state==EMBRYO) {
+      state="EMBRYO";
+    }
     else {
       state="OTHER";
     }
@@ -490,3 +515,28 @@ ps(void)
   return 0;
 }
 
+int
+getpinfo(struct pstat *pInfo)
+{
+    struct proc *p; 
+    int i = 0;
+    acquire(&ptable.lock);
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if(p->state == ZOMBIE || p->state == EMBRYO) {
+        continue;
+      }
+      if(p->state == UNUSED) {
+        pInfo -> inuse[i] = 0;
+      }
+      else {
+        pInfo->inuse[i] = 1;
+      }
+      pInfo->pid[i] = p->pid;
+      pInfo->ticks[i] = p->numTicks;
+      pInfo->size[i] = p->sz;
+      pInfo->priority[i] = p->priority;
+      i++;
+    }
+    release(&ptable.lock);
+    return 0;
+}
