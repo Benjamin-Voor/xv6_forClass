@@ -42,12 +42,12 @@ main(void)
         wait();
     // sleep(100); // Nvm, AI is stupid!
     // printf(1, "}\n"); // debugging
-    printf(1, "p->tickets: {");
+    // printf(1, "p->tickets: {"); // debugging
     if (getpinfo(&st) < 0) { // Rubric entry #4
         printf(1, "getpinfo failed\n");
         exit();
     }
-    printf(1, "}\n");
+    // printf(1, "}\n"); // debugging
 
 
 

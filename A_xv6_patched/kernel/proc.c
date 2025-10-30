@@ -530,7 +530,7 @@ ps(void) // baseline-1.pdf
   struct proc *p;
   char *state;
 
-  cprintf("PID\tState\t\tMemory Size\tProcess Name\n");
+  cprintf("PID\tState\t\tMemory Size\t\tProcess Name\t\tTickets\n");
 
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; ++p) {
@@ -553,7 +553,7 @@ ps(void) // baseline-1.pdf
     else {
       state = "OTHER";
     }
-    cprintf("PID: %d\tState: %s\tMemory Size: %d\tProcess Name: %s\tTickets: %s\n",
+    cprintf("PID: %d\tState: %s\tMemory Size: %d\tProcess Name: %s\tTickets: %d\n",
             p->pid, state, p->sz, p->name, p->tickets);
   }
   release(&ptable.lock);
@@ -584,7 +584,7 @@ getpinfo(struct pstat* pInfo) // baseline-1.pdf
     // cprintf("%d, ", pInfo->ticks[i]); // debugging
     pInfo->size[i] = p->sz; // error: 'struct proc' has no member named 'size'; did you mean 'sz'?
     pInfo->tickets[i] = p->tickets;
-    cprintf("%d ", p->tickets);
+    // cprintf("%d ", p->tickets); // debugging
     // i++; // This is done within the for loop
     // cprintf("%d, ", i);
   }

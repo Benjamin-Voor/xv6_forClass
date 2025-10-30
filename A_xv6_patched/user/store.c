@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
         if (abbreviate && !proc_info.inuse[i])
             continue;
         printf(1,
-                "Use: %d\t Size: %d\t PID: %d\t Ticks: %d\n",
+                "Use: %d\t Size: %d\t PID: %d\t  Ticks: %d\n", // added an extra space between \t and Ticks
                 proc_info.inuse[i],
                 proc_info.size[i],
                 proc_info.pid[i],
