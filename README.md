@@ -1,3 +1,5 @@
+Attention! This assignmnet has been moved to a different GitHub repository, at the following link: https://github.com/guentheraidan/xv6-Mini-Project-3.git
+
 The following files are automatically generated and I'm not going to be extra careful merging them. You can .gitignore them for all I care, because they'll come back when you run "make qemu-nox":
 
 xv6_patched/fs/
